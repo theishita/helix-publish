@@ -10,8 +10,11 @@
  * governing permissions and limitations under the License.
  */
 const { condit } = require('@adobe/helix-testutils');
+const { HelixConfig } = require('@adobe/helix-shared');
+const path = require('path');
 const assert = require('assert');
 const { main } = require('../index');
+
 /* eslint-env mocha */
 
 const config = {
@@ -96,6 +99,31 @@ describe('Integration Test', () => {
       token: process.env.HLX_FASTLY_AUTH,
       version: process.env.VERSION_NUM,
     }, config);
+
+    const res = await main(params);
+    assert.deepStrictEqual(res, {
+      body: {
+        status: 'published',
+        completed: 5,
+      },
+      statusCode: 200,
+    });
+  }).timeout(60000);
+
+  condit('Test publish function with devsite config locally', condit.hasenvs([
+    'HLX_FASTLY_NAMESPACE',
+    'HLX_FASTLY_AUTH',
+    'VERSION_NUM']), async () => {
+    const myconfig = await new HelixConfig()
+      .withConfigPath(path.resolve(__dirname, 'fixtures/devsite.yaml'))
+      .init();
+
+    const params = {
+      service: process.env.HLX_FASTLY_NAMESPACE,
+      token: process.env.HLX_FASTLY_AUTH,
+      version: process.env.VERSION_NUM,
+      configuration: myconfig.toJSON(),
+    };
 
     const res = await main(params);
     assert.deepStrictEqual(res, {
